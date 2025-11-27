@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CrunchList — Minha lista de animes</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">🍥</div>
+      <h1>CrunchList</h1>
+    </div>
+    <nav class="toolbar">
+      <div class="search-wrap">
+        <input id="searchInput" type="text" placeholder="Buscar título, gênero ou tag..." />
+      </div>
+      <div class="selects">
+        <select id="statusFilter" aria-label="Filtrar por status">
+          <option value="">Todos</option>
+          <option value="Assistindo">Assistindo</option>
+          <option value="Completo">Completo</option>
+          <option value="Pausado">Pausado</option>
+          <option value="Abandonado">Abandonado</option>
+          <option value="Planejando">Planejando</option>
+        </select>
+        <select id="sortSelect" aria-label="Ordenar">
+          <option value="created_desc">Recentes</option>
+          <option value="created_asc">Antigos</option>
+          <option value="title_asc">Título (A–Z)</option>
+          <option value="title_desc">Título (Z–A)</option>
+          <option value="score_desc">Nota (maior)</option>
+          <option value="score_asc">Nota (menor)</option>
+          <option value="episodes_desc">Episódios (maior)</option>
+          <option value="episodes_asc">Episódios (menor)</option>
+          <option value="fav_first">Favoritos primeiro</option>
+        </select>
+        <button id="addAnimeBtn" class="btn primary">+ Adicionar</button>
+        <div class="backup">
+          <button id="exportBtn" class="btn ghost">Exportar</button>
+          <label for="importInput" class="btn ghost">Importar</label>
+          <input id="importInput" type="file" accept="application/json" hidden />
+          <button id="themeToggle" class="btn ghost" title="Alternar tema">Tema</button>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <main class="container">
+    <aside class="sidepanel">
+      <h3 class="side-title">Tags</h3>
+      <div id="tagsPanel" class="tags-panel"></div>
+      <button id="clearTagsFilter" class="btn tiny ghost">Limpar tags</button>
+      <div class="stats">
+        <div class="stat"><span class="label">Total:</span><span id="statTotal" class="value">0</span></div>
+        <div class="stat"><span class="label">Assistindo:</span><span id="statWatching" class="value">0</span></div>
+        <div class="stat"><span class="label">Completo:</span><span id="statCompleted" class="value">0</span></div>
+        <div class="stat"><span class="label">Favoritos:</span><span id="statFav" class="value">0</span></div>
+      </div>
+    </aside>
+
+    <section class="content">
+      <section id="grid" class="grid"></section>
+    </section>
+  </main>
+
+  <!-- Modal: cadastro/edição -->
+  <div id="formModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-content">
+      <header class="modal-header">
+        <h2 id="formTitle">Novo anime</h2>
+        <button id="closeFormModal" class="icon-btn" aria-label="Fechar">✕</button>
+      </header>
+
+      <form id="animeForm">
+        <input type="hidden" id="animeId" />
+        <div class="form-grid">
+          <div class="form-left">
+            <div class="dropzone" id="coverDropzone">
+              <input id="cover" type="file" accept="image/*" hidden />
+              <img id="coverPreview" alt="Preview da capa" />
+              <div class="dz-hint">
+                Arraste a capa aqui ou clique para selecionar
+              </div>
+            </div>
+            <label class="checkbox">
+              <input type="checkbox" id="favoriteInput" />
+              Favorito ⭐
+            </label>
+          </div>
+          <div class="form-right">
+            <div class="form-group">
+              <label for="title">Título</label>
+              <input id="title" type="text" required />
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="status">Status</label>
+                <select id="status" required>
+                  <option value="Assistindo">Assistindo</option>
+                  <option value="Completo">Completo</option>
+                  <option value="Pausado">Pausado</option>
+                  <option value="Abandonado">Abandonado</option>
+                  <option value="Planejando">Planejando</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="episodes">Episódios</label>
+                <input id="episodes" type="number" min="0" placeholder="Ex.: 12" />
+              </div>
+              <div class="form-group">
+                <label for="score">Nota</label>
+                <input id="score" type="number" min="0" max="10" step="0.1" placeholder="0–10" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="genres">Gêneros (vírgulas)</label>
+              <input id="genres" type="text" placeholder="Ação, Aventura, Fantasia" />
+            </div>
+            <div class="form-group">
+              <label for="tags">Tags (vírgulas)</label>
+              <input id="tags" type="text" placeholder="isekai, shounen, favorito" />
+            </div>
+            <div class="form-group">
+              <label for="synopsis">Sinopse</label>
+              <textarea id="synopsis" rows="4" placeholder="Resumo do anime"></textarea>
+            </div>
+
+            <div class="actions">
+              <button type="submit" class="btn primary">Salvar</button>
+              <button type="button" id="resetForm" class="btn ghost">Limpar</button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: detalhes -->
+  <div id="detailModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-content">
+      <header class="modal-header">
+        <h2 id="detailTitle">Detalhes</h2>
+        <button id="closeDetailModal" class="icon-btn" aria-label="Fechar">✕</button>
+      </header>
+      <div class="detail-body">
+        <img id="detailCover" class="detail-cover" alt="Capa do anime" />
+        <div class="detail-info">
+          <div class="detail-top">
+            <h3 id="detailTitleText" class="detail-title"></h3>
+            <button id="toggleFavorite" class="btn tiny fav-btn" title="Favorito">⭐</button>
+          </div>
+          <div class="chips">
+            <span class="chip" id="detailStatus"></span>
+            <span class="chip">Ep: <span id="detailEpisodes"></span></span>
+            <span class="chip">Nota: <span id="detailScore"></span></span>
+          </div>
+          <div class="chips" id="detailGenres"></div>
+          <div class="chips" id="detailTags"></div>
+          <p class="detail-synopsis" id="detailSynopsis"></p>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="editAnime" class="btn ghost">Editar</button>
+        <button id="deleteAnime" class="btn danger">Excluir</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <small>CrunchList — seu catálogo, seu estilo</small>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
